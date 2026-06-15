@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MealTalk 급식톡 — 오늘의 급식</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --mint:       #3DAFA0;
+    --mint-light: #E8F7F5;
+    --mint-dark:  #2A7A6E;
+    --mint-mid:   #A8DDD8;
+    --bg:         #EEF8F6;
+    --sidebar-bg: #FFFFFF;
+    --white:      #FFFFFF;
+    --text:       #1A2E2A;
+    --text-muted: #6B8882;
+    --border:     #DFF0ED;
+    --error:      #E24B4A;
+    --warn-bg:    #FFF8F0;
+    --warn-border:#F5C47A;
+    --warn-text:  #9A5B00;
+    --success:    #3B9E5A;
+    --radius:     14px;
+    --shadow:     0 4px 20px rgba(45,120,110,0.10);
+  }
+
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── 상단 네비 ─── */
+  .topnav {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 32px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .topnav-logo {
+    font-size: 17px; font-weight: 800;
+    color: var(--mint-dark);
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+
+  .topnav-links {
+    display: flex; gap: 4px; flex: 1;
+  }
+
+  .topnav-links a {
+    font-size: 14px; font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: background .15s, color .15s;
+  }
+
+  .topnav-links a:hover { background: var(--mint-light); color: var(--mint-dark); }
+  .topnav-links a.active { color: var(--mint-dark); font-weight: 700; background: var(--mint-light); }
+
+  .topnav-right {
+    display: flex; align-items: center; gap: 10px; margin-left: auto;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none; background: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    transition: background .15s;
+  }
+  .icon-btn:hover { background: var(--mint-light); color: var(--mint-dark); }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--mint);
+    color: #fff; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+
+  /* ─── 레이아웃 ─── */
+  .layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ─── 사이드바 ─── */
+  .sidebar {
+    width: 180px;
+    min-width: 180px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    padding: 24px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sidebar-brand {
+    padding: 0 8px 20px;
+  }
+
+  .sidebar-brand .name {
+    font-size: 15px; font-weight: 800; color: var(--mint-dark);
+  }
+
+  .sidebar-brand .sub {
+    font-size: 11px; color: var(--text-muted); margin-top: 2px;
+  }
+
+  .sidebar-menu {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none; background: none; width: 100%; text-align: left;
+    transition: background .15s, color .15s;
+  }
+
+  .sidebar-item:hover { background: var(--mint-light); color: var(--mint-dark); }
+  .sidebar-item.active {
+    background: var(--mint); color: #fff; font-weight: 700;
+  }
+
+  .sidebar-item svg { flex-shrink: 0; }
+
+  .sidebar-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 14px 8px;
+  }
+
+  .sidebar-label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    padding: 4px 12px; letter-spacing: .4px;
+    text-transform: uppercase;
+  }
+
+  .meal-time-info {
+    margin-top: 4px;
+    padding: 0 8px;
+  }
+
+  .meal-time-info p {
+    font-size: 11px; color: var(--text-muted); margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .time-dot {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: var(--text); padding: 3px 0;
+  }
+
+  .time-dot::before {
+    content: ''; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--border); flex-shrink: 0;
+  }
+
+  .time-dot.active::before { background: var(--mint); }
+
+  .time-dot.active {
+    color: var(--mint-dark); font-weight: 700;
+  }
+
+  .sidebar-bottom {
+    margin-top: auto; padding-top: 16px;
+  }
+
+  .btn-today {
+    width: 100%; padding: 10px;
+    background: var(--mint); color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+  }
+
+  .btn-today:hover { background: var(--mint-dark); }
+
+  /* ─── 메인 콘텐츠 ─── */
+  .main {
+    flex: 1; min-width: 0;
+    padding: 32px 28px;
+    overflow-y: auto;
+  }
+
+  /* ─── 날짜 헤더 ─── */
+  .date-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .date-header h1 {
+    font-size: 28px; font-weight: 800; color: var(--text);
+    line-height: 1.2;
+  }
+
+  .date-header .school {
+    font-size: 13px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 5px;
+  }
+
+  .badge-row {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+
+  .badge {
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 12px; font-weight: 700;
+  }
+
+  .badge-mint  { background: var(--mint); color: #fff; }
+  .badge-outline { background: #fff; border: 1.5px solid var(--mint); color: var(--mint-dark); }
+
+  /* ─── 카드 그리드 ─── */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  /* ─── 급식 카드 ─── */
+  .meal-img {
+    width: 100%; height: 240px;
+    object-fit: cover;
+    display: block;
+    background: linear-gradient(135deg, #A8DDD8 0%, #3DAFA0 100%);
+    position: relative;
+  }
+
+  .meal-img-placeholder {
+    width: 100%; height: 240px;
+    background: linear-gradient(135deg, #C8EDE9 0%, #88CCC6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 64px;
+    position: relative;
+  }
+
+  .kcal-badge {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(0,0,0,0.55);
+    color: #fff; font-size: 13px; font-weight: 700;
+    padding: 5px 12px; border-radius: 99px;
+    backdrop-filter: blur(4px);
+  }
+
+  .meal-body {
+    padding: 22px 24px;
+  }
+
+  .meal-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .meal-title {
+    font-size: 20px; font-weight: 800; color: var(--text);
+  }
+
+  .like-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--mint-light);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mint);
+    transition: background .15s, transform .1s;
+    font-size: 18px;
+  }
+
+  .like-btn:hover { background: var(--mint); color: #fff; transform: scale(1.1); }
+  .like-btn.liked { background: var(--mint); color: #fff; }
+
+  .meal-tags {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .tag {
+    font-size: 12px; color: var(--mint-dark);
+    font-weight: 600;
+  }
+
+  .menu-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-top: 18px;
+  }
+
+  .menu-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; color: var(--text); font-weight: 500;
+  }
+
+  .menu-item::before {
+    content: ''; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--mint); flex-shrink: 0;
+  }
+
+  /* ─── 우측 사이드 카드 ─── */
+  .side-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .card-header {
+    padding: 18px 20px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .card-title {
+    font-size: 14px; font-weight: 700; color: var(--text);
+  }
+
+  .card-body { padding: 16px 20px 20px; }
+
+  /* ─── 영양 정보 ─── */
+  .nutrition-row {
+    margin-bottom: 14px;
+  }
+
+  .nutrition-row:last-child { margin-bottom: 0; }
+
+  .nutrition-label {
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: var(--text);
+    margin-bottom: 6px; font-weight: 500;
+  }
+
+  .nutrition-label span:last-child { color: var(--mint-dark); font-weight: 700; }
+
+  .progress-track {
+    height: 8px; background: var(--border);
+    border-radius: 99px; overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%; border-radius: 99px;
+    background: var(--mint);
+    transition: width .6s ease;
+  }
+
+  .progress-fill.warn { background: #F5A623; }
+  .progress-fill.ok   { background: var(--success); }
+
+  .nutrition-note {
+    font-size: 11px; color: var(--text-muted);
+    margin-top: 14px; text-align: center;
+  }
+
+  /* ─── 석식 예고 ─── */
+  .dinner-preview {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px 18px;
+  }
+
+  .dinner-img {
+    width: 56px; height: 56px; border-radius: 10px;
+    background: linear-gradient(135deg, #C8EDE9, #88CCC6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0;
+  }
+
+  .dinner-info .name {
+    font-size: 14px; font-weight: 700; color: var(--text);
+  }
+
+  .dinner-info .sub {
+    font-size: 12px; color: var(--text-muted); margin-top: 2px;
+  }
+
+  .dinner-info .kcal {
+    font-size: 12px; color: var(--mint-dark); font-weight: 700; margin-top: 3px;
+  }
+
+  /* ─── ⚠️ 알레르기 경고 ─── */
+  .allergy-banner {
+    background: var(--warn-bg);
+    border: 1.5px solid var(--warn-border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .allergy-icon {
+    font-size: 22px; flex-shrink: 0;
+  }
+
+  .allergy-text {
+    flex: 1;
+  }
+
+  .allergy-text strong {
+    font-size: 13px; font-weight: 700; color: var(--warn-text);
+    display: block; margin-bottom: 3px;
+  }
+
+  .allergy-text p {
+    font-size: 12px; color: #7A5000; line-height: 1.5;
+  }
+
+  .allergy-btn {
+    background: none; border: 1.5px solid var(--warn-border);
+    color: var(--warn-text); font-size: 12px; font-weight: 700;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+
+  .allergy-btn:hover { background: var(--warn-border); }
+
+  /* ─── 플로팅 버튼 ─── */
+  .fab-group {
+    position: fixed; right: 28px; bottom: 32px;
+    display: flex; flex-direction: column; gap: 10px;
+    align-items: flex-end;
+  }
+
+  .fab {
+    width: 44px; height: 44px;
+    border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    font-size: 18px;
+    transition: transform .15s;
+  }
+
+  .fab:hover { transform: scale(1.1); }
+  .fab-main  { background: var(--mint); color: #fff; width: 50px; height: 50px; font-size: 22px; }
+  .fab-sub   { background: #fff; color: var(--mint-dark); }
+
+  /* ─── 푸터 ─── */
+  footer {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 18px 24px;
+    font-size: 12px; color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  footer .foot-links {
+    display: flex; justify-content: center; gap: 20px;
+    margin-bottom: 6px; flex-wrap: wrap;
+  }
+
+  footer .foot-links a {
+    color: var(--text-muted); text-decoration: none; font-weight: 500;
+  }
+
+  footer .foot-links a:hover { color: var(--mint-dark); }
+</style>
+</head>
+<body>
+
+<!-- ─── 상단 네비 ─── -->
+<nav class="topnav">
+  <span class="topnav-logo">MealTalk (급식톡)</span>
+  <div class="topnav-links">
+    <a href="#" class="active">오늘의 메뉴</a>
+    <a href="#">영양 정보</a>
+    <a href="#">학생 리뷰</a>
+    <a href="#">마이페이지</a>
+  </div>
+  <div class="topnav-right">
+    <button class="icon-btn" title="알림">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+    </button>
+    <button class="icon-btn" title="설정">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </button>
+    <div class="avatar" id="user-avatar" title="마이페이지">홍</div>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- ─── 사이드바 ─── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="name">MealTalk</div>
+      <div class="sub">신선하고 건강한 학교 식단</div>
+    </div>
+
+    <div class="sidebar-menu">
+      <button class="sidebar-item active">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        달력 보기
+      </button>
+      <button class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+        </svg>
+        식단 카테고리
+      </button>
+      <button class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        알레르기 설정
+      </button>
+      <button class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        선호도 조사
+      </button>
+      <button class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        커뮤니티
+      </button>
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <div class="sidebar-label">오늘의 식단 구분</div>
+    <div class="meal-time-info">
+      <div class="time-dot">조식 (07:25 - 07:50)</div>
+      <div class="time-dot active">중식 (12:30 - 13:00)</div>
+      <div class="time-dot">석식 (17:15 - 18:20)</div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="btn-today">오늘의 식단 제보하기</button>
+    </div>
+  </aside>
+
+  <!-- ─── 메인 콘텐츠 ─── -->
+  <main class="main">
+    <!-- 날짜 헤더 -->
+    <div class="date-header">
+      <div>
+        <h1 id="today-date">2026년 6월 15일 월요일</h1>
+        <div class="school">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+          </svg>
+          미림마이스터고등학교
+        </div>
+      </div>
+      <div class="badge-row">
+        <span class="badge badge-mint">오늘의 중식</span>
+        <span class="badge badge-outline">식단 공개 완료</span>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <!-- 급식 카드 -->
+      <div class="card">
+        <div class="meal-img-placeholder">
+          🍱
+          <span class="kcal-badge">750 kcal</span>
+        </div>
+        <div class="meal-body">
+          <div class="meal-title-row">
+            <div class="meal-title">오늘의 중식 메뉴</div>
+            <button class="like-btn" id="like-btn" onclick="toggleLike()" title="좋아요">♡</button>
+          </div>
+          <div class="meal-tags">
+            <span class="tag">#고단백</span>
+            <span class="tag">#인기식단</span>
+            <span class="tag">#제철나물</span>
+          </div>
+          <div class="menu-grid" id="menu-list">
+            <div class="menu-item">김치찌개</div>
+            <div class="menu-item">제육볶음</div>
+            <div class="menu-item">흰쌀밥</div>
+            <div class="menu-item">시금치나물</div>
+            <div class="menu-item">깍두기</div>
+            <div class="menu-item">우유</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측 사이드 -->
+      <div class="side-col">
+        <!-- 영양 요약 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">오늘의 영양 요약</span>
+          </div>
+          <div class="card-body">
+            <div class="nutrition-row">
+              <div class="nutrition-label">
+                <span>단백질</span><span>32g (85%)</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill ok" style="width:85%"></div>
+              </div>
+            </div>
+            <div class="nutrition-row">
+              <div class="nutrition-label">
+                <span>탄수화물</span><span>105g (60%)</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width:60%"></div>
+              </div>
+            </div>
+            <div class="nutrition-row">
+              <div class="nutrition-label">
+                <span>지방</span><span>18g (45%)</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill warn" style="width:45%"></div>
+              </div>
+            </div>
+            <p class="nutrition-note">* 본 수치는 권장 섭취량 기준입니다.</p>
+          </div>
+        </div>
+
+        <!-- 석식 예고 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">오늘의 석식 예고</span>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--text-muted)">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+          <div class="dinner-preview">
+            <div class="dinner-img">🍳</div>
+            <div class="dinner-info">
+              <div class="name">낙지볶음덮밥</div>
+              <div class="sub">외 4종 메뉴</div>
+              <div class="kcal">680 kcal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⚠️ 알레르기 경고 배너 -->
+    <div class="allergy-banner" id="allergy-banner">
+      <div class="allergy-icon">⚠️</div>
+      <div class="allergy-text">
+        <strong>오늘의 알레르기 유발 식품 주의 안내</strong>
+        <p>돼지고기, 대두, 밀, 땅콩이 포함되어 있습니다. 해당 알레르기가 있는 학생은 급식 시 주의하시기 바랍니다.</p>
+      </div>
+      <button class="allergy-btn" onclick="document.getElementById('allergy-banner').style.display='none'">내 설정 확인</button>
+    </div>
+  </main>
+</div>
+
+<!-- 플로팅 버튼 -->
+<div class="fab-group">
+  <button class="fab fab-sub" title="리뷰 작성" onclick="openReviewModal()">✏️</button>
+  <button class="fab fab-sub" title="공유" onclick="showToast('링크가 복사되었습니다!')">🔗</button>
+  <button class="fab fab-main" title="추가" onclick="showToast('새 메뉴 제보하기')">＋</button>
+</div>
+
+<!-- ─── 리뷰 모달 ─── -->
+<div id="review-overlay" style="
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.35); z-index:200;
+  align-items:center; justify-content:center;
+">
+  <div style="
+    background:#fff; border-radius:20px;
+    width:100%; max-width:420px; margin:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.2);
+    overflow:hidden;
+  ">
+    <!-- 모달 헤더 -->
+    <div style="
+      display:flex; align-items:center; justify-content:space-between;
+      padding:20px 24px 16px;
+      border-bottom:1px solid #EEF8F6;
+    ">
+      <span style="font-size:16px; font-weight:800; color:#1A2E2A;">리뷰 작성하기</span>
+      <button onclick="closeReviewModal()" style="
+        background:none; border:none; cursor:pointer;
+        font-size:20px; color:#6B8882; line-height:1;
+        width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+        border-radius:50%;
+      ">✕</button>
+    </div>
+
+    <!-- 메뉴 정보 -->
+    <div style="padding:18px 24px 0;">
+      <div style="
+        background:#EEF8F6; border-radius:14px;
+        padding:14px 16px; display:flex; align-items:center; gap:14px;
+      ">
+        <div style="
+          width:60px; height:60px; border-radius:10px; flex-shrink:0;
+          background:linear-gradient(135deg,#C8EDE9,#3DAFA0);
+          display:flex; align-items:center; justify-content:center; font-size:28px;
+        ">🍱</div>
+        <div>
+          <div style="font-size:11px; color:#3DAFA0; font-weight:700; margin-bottom:3px;">오늘의 메뉴</div>
+          <div style="font-size:15px; font-weight:800; color:#1A2E2A;" id="review-menu-name">김치찌개와 제육볶음</div>
+          <div style="font-size:12px; color:#6B8882; margin-top:2px;" id="review-meal-date">로딩 중...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 별점 -->
+    <div style="padding:22px 24px 0; text-align:center;">
+      <div style="font-size:15px; font-weight:700; color:#1A2E2A; margin-bottom:14px;">맛은 어떠셨나요?</div>
+      <div id="star-row" style="display:flex; justify-content:center; gap:10px; margin-bottom:10px;">
+        <span class="star" data-v="1" onclick="setStar(1)">☆</span>
+        <span class="star" data-v="2" onclick="setStar(2)">☆</span>
+        <span class="star" data-v="3" onclick="setStar(3)">☆</span>
+        <span class="star" data-v="4" onclick="setStar(4)">☆</span>
+        <span class="star" data-v="5" onclick="setStar(5)">☆</span>
+      </div>
+      <div id="star-label" style="font-size:13px; color:#3DAFA0; font-weight:600; min-height:18px;"></div>
+    </div>
+
+    <!-- 코멘트 -->
+    <div style="padding:20px 24px 0;">
+      <div style="
+        display:flex; justify-content:space-between; align-items:baseline;
+        margin-bottom:8px;
+      ">
+        <span style="font-size:14px; font-weight:700; color:#1A2E2A;">한 줄 코멘트</span>
+        <span id="char-count" style="font-size:12px; color:#6B8882;">0 / 50</span>
+      </div>
+      <textarea id="review-comment" maxlength="50" placeholder="메뉴에 대한 솔직한 의견을 들려주세요." oninput="onCommentInput()" style="
+        width:100%; height:90px; resize:none;
+        border:1.5px solid #DFF0ED; border-radius:12px;
+        padding:12px 14px; font-size:14px; color:#1A2E2A;
+        font-family:inherit; outline:none;
+        background:#F7FCFB;
+        transition:border-color .2s;
+      "></textarea>
+    </div>
+
+    <!-- 등록 버튼 -->
+    <div style="padding:16px 24px 24px;">
+      <button id="review-submit-btn" onclick="submitReview()" style="
+        width:100%; height:50px; border:none; border-radius:14px;
+        background:#C0DDD8; color:#fff;
+        font-size:15px; font-weight:800; cursor:not-allowed;
+        transition:background .25s, cursor .1s;
+        display:flex; align-items:center; justify-content:center; gap:8px;
+      ">
+        ▶ 리뷰 등록하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 푸터 -->
+<footer>
+  <div class="foot-links">
+    <a href="#">이용약관</a>
+    <a href="#">개인정보처리방침</a>
+    <a href="#">영양 상담실</a>
+    <a href="#">학교 정보</a>
+  </div>
+  <div>MealTalk · 미림마이스터고등학교</div>
+  <div>© 2024 MealTalk. 모든 식단 정보는 학교 급식 운영 지침을 준수합니다.<br>식단은 식재료 수급 상황에 따라 예고 없이 변경될 수 있습니다.</div>
+</footer>
+
+<!-- 토스트 -->
+<div id="toast" style="
+  position:fixed; bottom:28px; left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:#1A2E2A; color:#fff; font-size:14px; font-weight:500;
+  padding:12px 22px; border-radius:10px;
+  transition:transform .3s ease; z-index:999;
+  white-space:nowrap;
+"></div>
+
+<style>
+  .star {
+    font-size:32px; cursor:pointer; color:#D0E8E4;
+    transition:color .15s, transform .1s;
+    user-select:none;
+  }
+  .star:hover { transform:scale(1.15); }
+  .star.filled { color:#E8D22A; }
+</style>
+
+<script>
+  // ─── 날짜 자동 설정 ───────────────────────────────────────────────
+  const days = ['일','월','화','수','목','금','토'];
+  const now = new Date();
+  document.getElementById('today-date').textContent =
+    `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일`;
+
+  // ─── 로그인 유저 반영 ─────────────────────────────────────────────
+  const user = JSON.parse(localStorage.getItem('mt_user') || sessionStorage.getItem('mt_user') || 'null');
+  if (user) {
+    document.getElementById('user-avatar').textContent = user.name[0];
+    document.getElementById('user-avatar').title = `${user.name}님 (${user.grade}학년 ${user.classNum}반)`;
+  }
+
+  // ─── 좋아요 버튼 ─────────────────────────────────────────────────
+  let liked = false;
+  function toggleLike() {
+    liked = !liked;
+    const btn = document.getElementById('like-btn');
+    btn.textContent = liked ? '♥' : '♡';
+    btn.classList.toggle('liked', liked);
+    showToast(liked ? '좋아요를 눌렀습니다 ♥' : '좋아요를 취소했습니다');
+  }
+
+  // ─── 토스트 ──────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => { t.style.transform = 'translateX(-50%) translateY(80px)'; }, 2800);
+  }
+
+  // ─── 오늘 급식 서버에서 불러오기 ─────────────────────────────────
+  let currentMenuId = 1; // 기본값 (서버 연결 시 실제 값으로 교체)
+
+  async function loadTodayMeal() {
+    try {
+      const today = now.toISOString().split('T')[0];
+      const res = await fetch(`http://localhost:4000/api/meals?date=${today}`);
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!rows.length) return;
+
+      // 메뉴 목록 갱신
+      const menuList = document.getElementById('menu-list');
+      menuList.innerHTML = '';
+      const names = [];
+      rows.forEach(r => {
+        if (r.menu_name) {
+          const div = document.createElement('div');
+          div.className = 'menu-item';
+          div.textContent = r.menu_name;
+          menuList.appendChild(div);
+          names.push(r.menu_name);
+          currentMenuId = r.menu_id || currentMenuId;
+        }
+      });
+
+      // 리뷰 모달 메뉴 이름 갱신
+      if (names.length) {
+        document.getElementById('review-menu-name').textContent =
+          names.slice(0,2).join('와 ') + (names.length > 2 ? ` 외 ${names.length-2}종` : '');
+      }
+
+      // 칼로리 합산
+      const totalKcal = rows.reduce((sum, r) => sum + (r.calories || 0), 0);
+      if (totalKcal > 0) document.querySelector('.kcal-badge').textContent = `${totalKcal} kcal`;
+    } catch {
+      // 서버 미실행 시 샘플 데이터 유지
+    }
+  }
+
+  loadTodayMeal();
+
+  // ─── 리뷰 모달 열기/닫기 ─────────────────────────────────────────
+  function openReviewModal() {
+    // 날짜 표시
+    const d = now;
+    document.getElementById('review-meal-date').textContent =
+      `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 중식`;
+
+    // 초기화
+    selectedStar = 0;
+    renderStars();
+    document.getElementById('review-comment').value = '';
+    document.getElementById('char-count').textContent = '0 / 50';
+    updateSubmitBtn();
+
+    const overlay = document.getElementById('review-overlay');
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeReviewModal() {
+    document.getElementById('review-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  // 오버레이 클릭 시 닫기
+  document.getElementById('review-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeReviewModal();
+  });
+
+  // ─── 별점 ────────────────────────────────────────────────────────
+  let selectedStar = 0;
+  const starLabels = ['', '별로예요', '그냥 그래요', '맛있어요!', '아주 맛있어요!', '최고예요! 🎉'];
+
+  function setStar(v) {
+    selectedStar = v;
+    renderStars();
+    updateSubmitBtn();
+  }
+
+  function renderStars() {
+    document.querySelectorAll('.star').forEach(s => {
+      const v = parseInt(s.dataset.v);
+      s.textContent = v <= selectedStar ? '★' : '☆';
+      s.classList.toggle('filled', v <= selectedStar);
+    });
+    document.getElementById('star-label').textContent = starLabels[selectedStar] || '';
+  }
+
+  // ─── 코멘트 글자수 ───────────────────────────────────────────────
+  function onCommentInput() {
+    const len = document.getElementById('review-comment').value.length;
+    document.getElementById('char-count').textContent = `${len} / 50`;
+    updateSubmitBtn();
+  }
+
+  // ─── 등록 버튼 활성화 (별점 + 코멘트 모두 입력 시) ──────────────
+  function updateSubmitBtn() {
+    const btn = document.getElementById('review-submit-btn');
+    const commentFilled = document.getElementById('review-comment').value.trim().length > 0;
+    const ready = selectedStar > 0 && commentFilled;
+
+    btn.style.background   = ready ? '#2A7A6E' : '#C0DDD8';
+    btn.style.cursor       = ready ? 'pointer' : 'not-allowed';
+  }
+
+  // ─── 리뷰 등록 ──────────────────────────────────────────────────
+  async function submitReview() {
+    const comment = document.getElementById('review-comment').value.trim();
+    if (!selectedStar)   { showToast('별점을 선택해주세요.'); return; }
+    if (!comment)        { showToast('한 줄 코멘트를 입력해주세요.'); return; }
+
+    const token = localStorage.getItem('mt_token') || sessionStorage.getItem('mt_token');
+
+    try {
+      const res = await fetch('http://localhost:4000/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ menuId: currentMenuId, rating: selectedStar, comment }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        closeReviewModal();
+        showToast('리뷰가 등록되었습니다! 🎉');
+      } else {
+        showToast(data.message || '등록에 실패했습니다.');
+      }
+    } catch {
+      // 서버 미연결 시 UI만 동작
+      closeReviewModal();
+      showToast('리뷰가 등록되었습니다! 🎉');
+    }
+  }
+</script>
+</body>
+</html>
