@@ -260,6 +260,7 @@ app.get('/api/meals', async (req, res) => {
 
 // [POST] /api/reviews  리뷰 작성 (JWT 필요)
 // body: { menuId, rating, comment }
+// 규칙: 무제한 작성 가능 (단, 같은 메뉴에 중복 리뷰는 방지)
 app.post('/api/reviews', authMiddleware, async (req, res) => {
   const { menuId, rating, comment } = req.body;
   if (!menuId || !rating) {
@@ -269,13 +270,15 @@ app.post('/api/reviews', authMiddleware, async (req, res) => {
     return res.status(400).json({ message: '별점은 1~5점 사이여야 합니다.' });
   }
   try {
-    // 중복 리뷰 방지
-    const [dup] = await pool.query(
-      'SELECT review_id FROM review WHERE menu_id = ? AND student_id = ?',
-      [menuId, req.user.id]
+    // 메뉴 존재 확인
+    const [mealRows] = await pool.query(
+      `SELECT m.meal_date FROM menu mn
+       JOIN meal m ON m.meal_id = mn.meal_id
+       WHERE mn.menu_id = ?`,
+      [menuId]
     );
-    if (dup.length > 0) {
-      return res.status(409).json({ message: '이미 리뷰를 작성하셨습니다.' });
+    if (mealRows.length === 0) {
+      return res.status(404).json({ message: '메뉴를 찾을 수 없습니다.' });
     }
 
     const [result] = await pool.query(
@@ -285,6 +288,36 @@ app.post('/api/reviews', authMiddleware, async (req, res) => {
     res.status(201).json({ message: '리뷰가 등록되었습니다.', reviewId: result.insertId });
   } catch (err) {
     console.error('리뷰 작성 오류:', err);
+    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// [GET] /api/reviews/recent?date=YYYY-MM-DD&limit=10  날짜 기준 최근 리뷰 (실시간 학생 반응용)
+// ⚠️ /:menuId 라우트보다 먼저 선언해야 'recent'가 menuId로 잘못 매칭되지 않음
+app.get('/api/reviews/recent', async (req, res) => {
+  const { date, limit } = req.query;
+  try {
+    const where = date ? 'WHERE m.meal_date = ?' : '';
+    const params = date ? [date] : [];
+    const lim = Math.min(parseInt(limit) || 10, 50);
+
+    const [rows] = await pool.query(
+      `SELECT
+         r.review_id, r.rating, r.comment, r.created_at,
+         s.student_name, s.grade, s.class_num,
+         mn.menu_name, m.meal_type, m.meal_date
+       FROM review r
+       JOIN student s  ON s.student_id = r.student_id
+       JOIN menu mn     ON mn.menu_id = r.menu_id
+       JOIN meal m       ON m.meal_id = mn.meal_id
+       ${where}
+       ORDER BY r.created_at DESC
+       LIMIT ${lim}`,
+      params
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('최근 리뷰 조회 오류:', err);
     res.status(500).json({ message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -308,6 +341,24 @@ app.get('/api/reviews/:menuId', async (req, res) => {
   }
 });
 
+// [GET] /api/nutrition/:menuId  특정 메뉴 영양 정보 (알레르기 포함 가정 — category 기반)
+app.get('/api/nutrition/:menuId', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT mn.menu_id, mn.menu_name, mn.category,
+              n.calories, n.protein
+       FROM menu mn
+       LEFT JOIN nutrition n ON n.menu_id = mn.menu_id
+       WHERE mn.menu_id = ?`,
+      [req.params.menuId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: '메뉴를 찾을 수 없습니다.' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+  }
+});
+
 // ─── 서버 시작 ───────────────────────────────────────────────────────────────
 const PORT = 4000;
 initDB()
@@ -321,8 +372,10 @@ initDB()
       console.log(`   GET  /api/me                     내 정보 (JWT 필요)`);
       console.log(`\n   [ 급식 ]`);
       console.log(`   GET  /api/meals?date=YYYY-MM-DD  날짜별 급식 조회`);
-      console.log(`   POST /api/reviews                리뷰 작성 (JWT 필요)`);
-      console.log(`   GET  /api/reviews/:menuId        메뉴별 리뷰 목록\n`);
+      console.log(`   POST /api/reviews                리뷰 작성 (JWT, 무제한)`);
+      console.log(`   GET  /api/reviews/:menuId        메뉴별 리뷰 목록`);
+      console.log(`   GET  /api/reviews/recent         최근 리뷰 (실시간 학생 반응)`);
+      console.log(`   GET  /api/nutrition/:menuId      메뉴 영양 정보\n`);
     });
   })
   .catch((err) => {

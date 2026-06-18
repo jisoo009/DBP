@@ -490,8 +490,8 @@
 <nav class="topnav">
   <span class="topnav-logo">MealTalk (급식톡)</span>
   <div class="topnav-links">
-    <a href="#" class="active">오늘의 메뉴</a>
-    <a href="#">영양 정보</a>
+    <a href="main.html" class="active">오늘의 메뉴</a>
+    <a href="nutrition.html">영양 정보</a>
     <a href="#">학생 리뷰</a>
     <a href="#">마이페이지</a>
   </div>
@@ -526,7 +526,7 @@
         </svg>
         달력 보기
       </button>
-      <button class="sidebar-item">
+      <button class="sidebar-item" onclick="location.href='nutrition.html'">
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
         </svg>
@@ -707,7 +707,10 @@
       padding:20px 24px 16px;
       border-bottom:1px solid #EEF8F6;
     ">
-      <span style="font-size:16px; font-weight:800; color:#1A2E2A;">리뷰 작성하기</span>
+      <div>
+        <span style="font-size:16px; font-weight:800; color:#1A2E2A;">리뷰 작성하기</span>
+        <div id="review-quota-badge" style="font-size:11px; color:#3DAFA0; font-weight:700; margin-top:3px;"></div>
+      </div>
       <button onclick="closeReviewModal()" style="
         background:none; border:none; cursor:pointer;
         font-size:20px; color:#6B8882; line-height:1;
@@ -901,6 +904,7 @@
     renderStars();
     document.getElementById('review-comment').value = '';
     document.getElementById('char-count').textContent = '0 / 50';
+    document.getElementById('review-quota-badge').textContent = '';
     updateSubmitBtn();
 
     const overlay = document.getElementById('review-overlay');
@@ -950,24 +954,25 @@
     const commentFilled = document.getElementById('review-comment').value.trim().length > 0;
     const ready = selectedStar > 0 && commentFilled;
 
-    btn.style.background   = ready ? '#2A7A6E' : '#C0DDD8';
-    btn.style.cursor       = ready ? 'pointer' : 'not-allowed';
+    btn.style.background = ready ? '#2A7A6E' : '#C0DDD8';
+    btn.style.cursor      = ready ? 'pointer' : 'not-allowed';
   }
 
-  // ─── 리뷰 등록 ──────────────────────────────────────────────────
+  // ─── 리뷰 등록 (무제한) ─────────────────────────────────────────
   async function submitReview() {
     const comment = document.getElementById('review-comment').value.trim();
     if (!selectedStar)   { showToast('별점을 선택해주세요.'); return; }
     if (!comment)        { showToast('한 줄 코멘트를 입력해주세요.'); return; }
 
     const token = localStorage.getItem('mt_token') || sessionStorage.getItem('mt_token');
+    if (!token) { showToast('로그인이 필요합니다.'); return; }
 
     try {
       const res = await fetch('http://localhost:4000/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ menuId: currentMenuId, rating: selectedStar, comment }),
       });
@@ -980,9 +985,7 @@
         showToast(data.message || '등록에 실패했습니다.');
       }
     } catch {
-      // 서버 미연결 시 UI만 동작
-      closeReviewModal();
-      showToast('리뷰가 등록되었습니다! 🎉');
+      showToast('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요.');
     }
   }
 </script>
