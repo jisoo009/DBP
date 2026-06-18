@@ -303,7 +303,7 @@ app.get('/api/reviews/recent', async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT
-         r.review_id, r.rating, r.comment, r.created_at,
+         r.review_id, r.student_id, r.menu_id, r.rating, r.comment, r.created_at,
          s.student_name, s.grade, s.class_num,
          mn.menu_name, m.meal_type, m.meal_date
        FROM review r
@@ -327,7 +327,7 @@ app.get('/api/reviews/:menuId', async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT
-         r.review_id, r.rating, r.comment, r.created_at,
+         r.review_id, r.student_id, r.rating, r.comment, r.created_at,
          s.student_name, s.grade, s.class_num
        FROM review r
        JOIN student s ON s.student_id = r.student_id
@@ -337,6 +337,47 @@ app.get('/api/reviews/:menuId', async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
+    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// [PUT] /api/reviews/:reviewId  리뷰 수정 (JWT 필요)
+app.put('/api/reviews/:reviewId', authMiddleware, async (req, res) => {
+  const { rating, comment } = req.body;
+  const { reviewId } = req.params;
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ message: '올바른 별점(1~5)을 입력해주세요.' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE review SET rating = ?, comment = ? WHERE review_id = ? AND student_id = ?',
+      [rating, comment || null, reviewId, req.user.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(403).json({ message: '수정 권한이 없거나 리뷰를 찾을 수 없습니다.' });
+    }
+    res.json({ message: '리뷰가 수정되었습니다.' });
+  } catch (err) {
+    console.error('리뷰 수정 오류:', err);
+    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// [DELETE] /api/reviews/:reviewId  리뷰 삭제 (JWT 필요)
+app.delete('/api/reviews/:reviewId', authMiddleware, async (req, res) => {
+  try {
+    const [result] = await pool.query(
+      'DELETE FROM review WHERE review_id = ? AND student_id = ?',
+      [req.params.reviewId, req.user.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(403).json({ message: '삭제 권한이 없거나 리뷰를 찾을 수 없습니다.' });
+    }
+    res.json({ message: '리뷰가 삭제되었습니다.' });
+  } catch (err) {
+    console.error('리뷰 삭제 오류:', err);
     res.status(500).json({ message: '서버 오류가 발생했습니다.' });
   }
 });
