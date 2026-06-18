@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MealTalk 급식톡 — 학생 리뷰</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --mint:       #3DAFA0;
+    --mint-light: #E8F7F5;
+    --mint-dark:  #2A7A6E;
+    --mint-mid:   #A8DDD8;
+    --bg:         #EEF8F6;
+    --sidebar-bg: #FFFFFF;
+    --white:      #FFFFFF;
+    --text:       #1A2E2A;
+    --text-muted: #6B8882;
+    --border:     #DFF0ED;
+    --error:      #E24B4A;
+    --success:    #3B9E5A;
+    --radius:     14px;
+    --shadow:     0 4px 20px rgba(45,120,110,0.10);
+  }
+
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── 상단 네비 ─── */
+  .topnav {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 32px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .topnav-logo { font-size: 17px; font-weight: 800; color: var(--mint-dark); white-space: nowrap; margin-right: 8px; }
+  .topnav-links { display: flex; gap: 4px; flex: 1; }
+
+  .topnav-links a {
+    font-size: 14px; font-weight: 500; color: var(--text-muted);
+    text-decoration: none; padding: 6px 14px; border-radius: 8px;
+    transition: background .15s, color .15s;
+  }
+
+  .topnav-links a:hover { background: var(--mint-light); color: var(--mint-dark); }
+  .topnav-links a.active { color: var(--mint-dark); font-weight: 700; background: var(--mint-light); }
+
+  .topnav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: none; background: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    transition: background .15s;
+  }
+  .icon-btn:hover { background: var(--mint-light); color: var(--mint-dark); }
+
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--mint); color: #fff; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+
+  /* ─── 레이아웃 ─── */
+  .layout { display: flex; flex: 1; min-height: 0; }
+
+  /* ─── 사이드바 ─── */
+  .sidebar {
+    width: 180px; min-width: 180px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    padding: 24px 14px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+
+  .sidebar-brand { padding: 0 8px 20px; }
+  .sidebar-brand .name { font-size: 15px; font-weight: 800; color: var(--mint-dark); }
+  .sidebar-brand .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .sidebar-menu { display: flex; flex-direction: column; gap: 2px; }
+
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+    transition: background .15s, color .15s;
+    text-decoration: none;
+  }
+
+  .sidebar-item:hover { background: var(--mint-light); color: var(--mint-dark); }
+  .sidebar-item.active { background: var(--mint); color: #fff; font-weight: 700; }
+  .sidebar-item svg { flex-shrink: 0; }
+
+  .sidebar-bottom { margin-top: auto; padding-top: 16px; }
+
+  .btn-today {
+    width: 100%; padding: 10px;
+    background: var(--mint); color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-today:hover { background: var(--mint-dark); }
+
+  /* ─── 메인 콘텐츠 ─── */
+  .main { flex: 1; min-width: 0; padding: 32px 28px 40px; overflow-y: auto; }
+
+  .page-title { font-size: 28px; font-weight: 800; color: var(--text); }
+  .page-sub { font-size: 14px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  /* ─── 상단 요약 그리드 ─── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    margin-top: 24px;
+  }
+
+  .score-card {
+    padding: 28px 24px;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .score-num { font-size: 44px; font-weight: 800; color: var(--text); line-height: 1; }
+  .score-stars { font-size: 20px; color: #E8D22A; margin-top: 8px; letter-spacing: 2px; }
+  .score-total { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+
+  .write-btn {
+    margin-top: 20px;
+    width: 100%;
+    height: 44px;
+    background: var(--mint-dark);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background .15s;
+  }
+  .write-btn:hover { background: #1f5c52; }
+
+  .dist-card { padding: 24px 26px; }
+  .dist-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+
+  .dist-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .dist-row:last-child { margin-bottom: 0; }
+
+  .dist-label { font-size: 13px; color: var(--text-muted); width: 26px; flex-shrink: 0; }
+  .dist-track {
+    flex: 1; height: 9px; background: var(--border);
+    border-radius: 99px; overflow: hidden;
+  }
+  .dist-fill { height: 100%; background: var(--mint); border-radius: 99px; transition: width .6s ease; }
+  .dist-pct { font-size: 12px; color: var(--text-muted); width: 34px; text-align: right; flex-shrink: 0; }
+
+  /* ─── 필터 바 ─── */
+  .filter-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 28px; flex-wrap: wrap; gap: 12px;
+  }
+
+  .filter-pills { display: flex; gap: 8px; }
+
+  .pill {
+    padding: 8px 18px;
+    border-radius: 99px;
+    font-size: 13px; font-weight: 600;
+    border: 1.5px solid var(--border);
+    background: #fff; color: var(--text-muted);
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+
+  .pill.active { background: var(--mint); color: #fff; border-color: var(--mint); }
+  .pill:hover:not(.active) { border-color: var(--mint-mid); color: var(--mint-dark); }
+
+  .sort-select {
+    height: 38px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 13px; color: var(--text);
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+  }
+
+  /* ─── 리뷰 그리드 ─── */
+  .review-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .review-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+  }
+
+  .review-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .reviewer { display: flex; align-items: center; gap: 10px; }
+
+  .reviewer-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--mint-mid), var(--mint));
+    color: #fff; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .reviewer-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .reviewer-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .review-stars { font-size: 13px; color: #E8D22A; white-space: nowrap; flex-shrink: 0; }
+
+  .meal-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 800; letter-spacing: .5px;
+    padding: 3px 9px; border-radius: 6px;
+    background: var(--mint-light); color: var(--mint-dark);
+    margin-bottom: 10px;
+  }
+
+  .review-text {
+    font-size: 13px; color: var(--text); line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .review-empty {
+    grid-column: 1 / -1;
+    text-align: center; padding: 50px 10px;
+    color: var(--text-muted); font-size: 14px;
+  }
+
+  /* ─── 푸터 ─── */
+  footer {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 18px 24px;
+    font-size: 12px; color: var(--text-muted);
+    line-height: 1.8;
+  }
+  footer .foot-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 6px; flex-wrap: wrap; }
+  footer .foot-links a { color: var(--text-muted); text-decoration: none; font-weight: 500; }
+  footer .foot-links a:hover { color: var(--mint-dark); }
+
+  /* ─── 플로팅 버튼 ─── */
+  .fab-group { position: fixed; right: 28px; bottom: 32px; }
+  .fab-main {
+    width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--mint); color: #fff; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    transition: transform .15s;
+  }
+  .fab-main:hover { transform: scale(1.1); }
+
+  /* ─── 토스트 ─── */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1A2E2A; color: #fff; font-size: 14px; font-weight: 500;
+    padding: 12px 22px; border-radius: 10px;
+    transition: transform .3s ease; z-index: 999; white-space: nowrap;
+  }
+
+  @media (max-width: 980px) {
+    .summary-grid { grid-template-columns: 1fr; }
+    .review-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── 상단 네비 ─── -->
+<nav class="topnav">
+  <span class="topnav-logo">MealTalk (급식톡)</span>
+  <div class="topnav-links">
+    <a href="main.html">오늘의 메뉴</a>
+    <a href="nutrition.html">영양 정보</a>
+    <a href="reviews.html" class="active">학생 리뷰</a>
+    <a href="#">마이페이지</a>
+  </div>
+  <div class="topnav-right">
+    <button class="icon-btn" title="알림">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+    </button>
+    <button class="icon-btn" title="설정">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </button>
+    <div class="avatar" id="user-avatar" title="마이페이지">홍</div>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- ─── 사이드바 ─── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="name">MealTalk</div>
+      <div class="sub">신선하고 건강한 학교 식단</div>
+    </div>
+
+    <div class="sidebar-menu">
+      <a href="main.html" class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        달력 보기
+      </a>
+      <a href="nutrition.html" class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+        </svg>
+        식단 카테고리
+      </a>
+      <button class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        알레르기 설정
+      </button>
+      <button class="sidebar-item">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        선호도 조사
+      </button>
+      <button class="sidebar-item active">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        커뮤니티
+      </button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="btn-today">오늘의 식단 제보하기</button>
+    </div>
+  </aside>
+
+  <!-- ─── 메인 콘텐츠 ─── -->
+  <main class="main">
+    <div class="page-title">학생 리뷰</div>
+    <p class="page-sub">우리 학교 급식에 대한 친구들의 솔직한 생각을 확인해보세요. 여러분의 소중한 한마디가 더 맛있는 급식을 만듭니다.</p>
+
+    <!-- 요약 영역 -->
+    <div class="summary-grid">
+      <div class="card score-card">
+        <div class="score-num" id="avg-score">4.5</div>
+        <div class="score-stars" id="avg-stars">★★★★☆</div>
+        <div class="score-total" id="total-count">총 1,248개의 리뷰 기준</div>
+        <button class="write-btn" onclick="goWriteReview()">✏️ 리뷰 작성하기</button>
+      </div>
+
+      <div class="card dist-card">
+        <div class="dist-title">평점 분포</div>
+        <div class="dist-row">
+          <span class="dist-label">5점</span>
+          <div class="dist-track"><div class="dist-fill" id="dist-5" style="width:65%"></div></div>
+          <span class="dist-pct" id="dist-5-pct">65%</span>
+        </div>
+        <div class="dist-row">
+          <span class="dist-label">4점</span>
+          <div class="dist-track"><div class="dist-fill" id="dist-4" style="width:20%"></div></div>
+          <span class="dist-pct" id="dist-4-pct">20%</span>
+        </div>
+        <div class="dist-row">
+          <span class="dist-label">3점</span>
+          <div class="dist-track"><div class="dist-fill" id="dist-3" style="width:10%"></div></div>
+          <span class="dist-pct" id="dist-3-pct">10%</span>
+        </div>
+        <div class="dist-row">
+          <span class="dist-label">2점</span>
+          <div class="dist-track"><div class="dist-fill" id="dist-2" style="width:3%"></div></div>
+          <span class="dist-pct" id="dist-2-pct">3%</span>
+        </div>
+        <div class="dist-row">
+          <span class="dist-label">1점</span>
+          <div class="dist-track"><div class="dist-fill" id="dist-1" style="width:2%"></div></div>
+          <span class="dist-pct" id="dist-1-pct">2%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 필터 바 -->
+    <div class="filter-bar">
+      <div class="filter-pills">
+        <button class="pill active" data-filter="전체" onclick="setFilter('전체')">전체</button>
+        <button class="pill" data-filter="점심" onclick="setFilter('점심')">점심</button>
+        <button class="pill" data-filter="저녁" onclick="setFilter('저녁')">저녁</button>
+      </div>
+      <select class="sort-select" id="sort-select" onchange="renderReviews()">
+        <option value="latest">최신순</option>
+        <option value="rating-high">평점 높은순</option>
+        <option value="rating-low">평점 낮은순</option>
+      </select>
+    </div>
+
+    <!-- 리뷰 카드 그리드 -->
+    <div class="review-grid" id="review-grid">
+      <div class="review-empty">리뷰를 불러오는 중입니다...</div>
+    </div>
+  </main>
+</div>
+
+<!-- 플로팅 버튼 -->
+<div class="fab-group">
+  <button class="fab-main" title="리뷰 작성" onclick="goWriteReview()">＋</button>
+</div>
+
+<!-- 푸터 -->
+<footer>
+  <div class="foot-links">
+    <a href="#">이용약관</a>
+    <a href="#">개인정보처리방침</a>
+    <a href="#">영양 상담실</a>
+    <a href="#">학교 정보</a>
+  </div>
+  <div>© 2024 MealTalk. 모든 식단 정보는 학교 급식 운영 지침을 준수합니다.</div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+  const API_BASE = 'http://localhost:4000/api';
+
+  // 로그인 유저 아바타
+  const user = JSON.parse(localStorage.getItem('mt_user') || sessionStorage.getItem('mt_user') || 'null');
+  if (user) {
+    document.getElementById('user-avatar').textContent = user.name[0];
+    document.getElementById('user-avatar').title = `${user.name}님 (${user.grade}학년 ${user.classNum}반)`;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => { t.style.transform = 'translateX(-50%) translateY(80px)'; }, 2800);
+  }
+
+  function goWriteReview() {
+    // main.html로 이동해서 연필 버튼으로 리뷰 작성 모달을 열도록 플래그 전달
+    sessionStorage.setItem('mt_open_review_modal', '1');
+    location.href = 'main.html';
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function timeAgo(dateStr) {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const min = Math.floor(diffMs / 60000);
+    if (min < 1) return '방금 전';
+    if (min < 60) return `${min}분 전`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}시간 전`;
+    return `${Math.floor(hr / 24)}일 전`;
+  }
+
+  function starString(rating) {
+    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+  }
+
+  function mealTypeToTag(mealType) {
+    if (!mealType) return 'LUNCH';
+    if (mealType.includes('점심') || mealType.includes('중식')) return 'LUNCH';
+    if (mealType.includes('저녁') || mealType.includes('석식')) return 'DINNER';
+    if (mealType.includes('아침') || mealType.includes('조식')) return 'BREAKFAST';
+    return mealType.toUpperCase();
+  }
+
+  function mealTypeMatchesFilter(mealType, filter) {
+    if (filter === '전체') return true;
+    if (filter === '점심') return mealType && (mealType.includes('점심') || mealType.includes('중식'));
+    if (filter === '저녁') return mealType && (mealType.includes('저녁') || mealType.includes('석식'));
+    return true;
+  }
+
+  let allReviews = [];
+  let currentFilter = '전체';
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.filter === f);
+    });
+    renderReviews();
+  }
+
+  function renderSummary(rows) {
+    if (!rows.length) return;
+    const total = rows.length;
+    const avg = rows.reduce((s, r) => s + r.rating, 0) / total;
+    document.getElementById('avg-score').textContent = avg.toFixed(1);
+    document.getElementById('avg-stars').textContent = starString(Math.round(avg));
+    document.getElementById('total-count').textContent = `총 ${total.toLocaleString()}개의 리뷰 기준`;
+
+    const counts = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+    rows.forEach(r => { if (counts[r.rating] !== undefined) counts[r.rating]++; });
+
+    [5,4,3,2,1].forEach(star => {
+      const pct = total ? Math.round((counts[star] / total) * 100) : 0;
+      document.getElementById(`dist-${star}`).style.width = pct + '%';
+      document.getElementById(`dist-${star}-pct`).textContent = pct + '%';
+    });
+  }
+
+  function renderReviews() {
+    const grid = document.getElementById('review-grid');
+    let rows = allReviews.filter(r => mealTypeMatchesFilter(r.meal_type, currentFilter));
+
+    const sort = document.getElementById('sort-select').value;
+    if (sort === 'rating-high') rows = [...rows].sort((a,b) => b.rating - a.rating);
+    else if (sort === 'rating-low') rows = [...rows].sort((a,b) => a.rating - b.rating);
+    else rows = [...rows].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (!rows.length) {
+      grid.innerHTML = '<div class="review-empty">아직 작성된 리뷰가 없습니다. 첫 리뷰를 남겨보세요!</div>';
+      return;
+    }
+
+    grid.innerHTML = rows.map(r => `
+      <div class="review-card">
+        <div class="review-top">
+          <div class="reviewer">
+            <div class="reviewer-avatar">${escapeHtml((r.student_name || '?')[0])}</div>
+            <div>
+              <div class="reviewer-name">${escapeHtml(r.student_name || '익명')}</div>
+              <div class="reviewer-meta">${r.grade}학년 ${r.class_num}반 · ${timeAgo(r.created_at)}</div>
+            </div>
+          </div>
+          <div class="review-stars">${starString(r.rating)}</div>
+        </div>
+        <span class="meal-tag">${mealTypeToTag(r.meal_type)}</span>
+        <div class="review-text">${escapeHtml(r.comment || '')}</div>
+      </div>
+    `).join('');
+  }
+
+  async function loadReviews() {
+    try {
+      const res = await fetch(`${API_BASE}/reviews/recent?limit=50`);
+      if (!res.ok) throw new Error();
+      allReviews = await res.json();
+      renderSummary(allReviews);
+      renderReviews();
+    } catch {
+      document.getElementById('review-grid').innerHTML =
+        '<div class="review-empty">서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.</div>';
+    }
+  }
+
+  loadReviews();
+  // 새 리뷰가 실시간으로 반영되도록 주기적으로 갱신
+  setInterval(loadReviews, 10000);
+</script>
+</body>
+</html>
