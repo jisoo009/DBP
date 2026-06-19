@@ -292,6 +292,49 @@ app.post('/api/reviews', authMiddleware, async (req, res) => {
   }
 });
 
+// [PUT] /api/reviews/:reviewId  리뷰 수정 (JWT, 본인만)
+// body: { rating, comment }
+app.put('/api/reviews/:reviewId', authMiddleware, async (req, res) => {
+  const { rating, comment } = req.body;
+  const { reviewId } = req.params;
+  if (!rating) return res.status(400).json({ message: 'rating은 필수입니다.' });
+  if (rating < 1 || rating > 5) return res.status(400).json({ message: '별점은 1~5점 사이여야 합니다.' });
+  try {
+    const [rows] = await pool.query(
+      'SELECT student_id FROM review WHERE review_id = ?', [reviewId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: '리뷰를 찾을 수 없습니다.' });
+    if (rows[0].student_id !== req.user.id) return res.status(403).json({ message: '본인 리뷰만 수정할 수 있습니다.' });
+
+    await pool.query(
+      'UPDATE review SET rating = ?, comment = ? WHERE review_id = ?',
+      [rating, comment || null, reviewId]
+    );
+    res.json({ message: '리뷰가 수정되었습니다.' });
+  } catch (err) {
+    console.error('리뷰 수정 오류:', err);
+    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// [DELETE] /api/reviews/:reviewId  리뷰 삭제 (JWT, 본인만)
+app.delete('/api/reviews/:reviewId', authMiddleware, async (req, res) => {
+  const { reviewId } = req.params;
+  try {
+    const [rows] = await pool.query(
+      'SELECT student_id FROM review WHERE review_id = ?', [reviewId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: '리뷰를 찾을 수 없습니다.' });
+    if (rows[0].student_id !== req.user.id) return res.status(403).json({ message: '본인 리뷰만 삭제할 수 있습니다.' });
+
+    await pool.query('DELETE FROM review WHERE review_id = ?', [reviewId]);
+    res.json({ message: '리뷰가 삭제되었습니다.' });
+  } catch (err) {
+    console.error('리뷰 삭제 오류:', err);
+    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+  }
+});
+
 // [GET] /api/reviews/recent?date=YYYY-MM-DD&limit=10  날짜 기준 최근 리뷰 (실시간 학생 반응용)
 // ⚠️ /:menuId 라우트보다 먼저 선언해야 'recent'가 menuId로 잘못 매칭되지 않음
 app.get('/api/reviews/recent', async (req, res) => {
@@ -303,7 +346,8 @@ app.get('/api/reviews/recent', async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT
-         r.review_id, r.student_id, r.menu_id, r.rating, r.comment, r.created_at,
+         r.review_id, r.rating, r.comment, r.created_at,
+         r.student_id,
          s.student_name, s.grade, s.class_num,
          mn.menu_name, m.meal_type, m.meal_date
        FROM review r
@@ -327,7 +371,7 @@ app.get('/api/reviews/:menuId', async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT
-         r.review_id, r.student_id, r.rating, r.comment, r.created_at,
+         r.review_id, r.rating, r.comment, r.created_at,
          s.student_name, s.grade, s.class_num
        FROM review r
        JOIN student s ON s.student_id = r.student_id
@@ -337,47 +381,6 @@ app.get('/api/reviews/:menuId', async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
-  }
-});
-
-// [PUT] /api/reviews/:reviewId  리뷰 수정 (JWT 필요)
-app.put('/api/reviews/:reviewId', authMiddleware, async (req, res) => {
-  const { rating, comment } = req.body;
-  const { reviewId } = req.params;
-
-  if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ message: '올바른 별점(1~5)을 입력해주세요.' });
-  }
-
-  try {
-    const [result] = await pool.query(
-      'UPDATE review SET rating = ?, comment = ? WHERE review_id = ? AND student_id = ?',
-      [rating, comment || null, reviewId, req.user.id]
-    );
-    if (result.affectedRows === 0) {
-      return res.status(403).json({ message: '수정 권한이 없거나 리뷰를 찾을 수 없습니다.' });
-    }
-    res.json({ message: '리뷰가 수정되었습니다.' });
-  } catch (err) {
-    console.error('리뷰 수정 오류:', err);
-    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
-  }
-});
-
-// [DELETE] /api/reviews/:reviewId  리뷰 삭제 (JWT 필요)
-app.delete('/api/reviews/:reviewId', authMiddleware, async (req, res) => {
-  try {
-    const [result] = await pool.query(
-      'DELETE FROM review WHERE review_id = ? AND student_id = ?',
-      [req.params.reviewId, req.user.id]
-    );
-    if (result.affectedRows === 0) {
-      return res.status(403).json({ message: '삭제 권한이 없거나 리뷰를 찾을 수 없습니다.' });
-    }
-    res.json({ message: '리뷰가 삭제되었습니다.' });
-  } catch (err) {
-    console.error('리뷰 삭제 오류:', err);
     res.status(500).json({ message: '서버 오류가 발생했습니다.' });
   }
 });

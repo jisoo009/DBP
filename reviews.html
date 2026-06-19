@@ -266,7 +266,131 @@
     color: var(--text-muted); font-size: 14px;
   }
 
-  /* ─── 푸터 ─── */
+  /* ─── ⋮ 메뉴 버튼 ─── */
+  .review-top-right {
+    position: relative; flex-shrink: 0;
+  }
+
+  .more-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; color: var(--text-muted);
+    padding: 2px 6px; border-radius: 6px;
+    line-height: 1;
+    transition: background .15s;
+  }
+  .more-btn:hover { background: var(--mint-light); color: var(--mint-dark); }
+
+  .more-dropdown {
+    display: none;
+    position: absolute; right: 0; top: 28px;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    overflow: hidden;
+    z-index: 50;
+    min-width: 100px;
+  }
+
+  .more-dropdown.open { display: block; }
+
+  .more-dropdown button {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 10px 14px;
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    text-align: left;
+    transition: background .12s;
+  }
+  .more-dropdown button:hover { background: var(--mint-light); }
+  .more-dropdown button.del { color: var(--error); }
+  .more-dropdown button.del:hover { background: #FDEAEA; }
+
+  /* ─── 수정 모달 ─── */
+  #edit-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+
+  .edit-modal {
+    background: #fff; border-radius: 20px;
+    width: 100%; max-width: 420px; margin: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+
+  .edit-modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #EEF8F6;
+  }
+
+  .edit-modal-head span { font-size: 16px; font-weight: 800; color: #1A2E2A; }
+
+  .edit-close-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 20px; color: #6B8882;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+  }
+
+  .edit-menu-info {
+    margin: 18px 24px 0;
+    background: #EEF8F6; border-radius: 14px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  }
+
+  .edit-menu-icon {
+    width: 60px; height: 60px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg,#C8EDE9,#3DAFA0);
+    display: flex; align-items: center; justify-content: center; font-size: 28px;
+  }
+
+  .edit-menu-label { font-size: 11px; color: #3DAFA0; font-weight: 700; margin-bottom: 3px; }
+  .edit-menu-name  { font-size: 15px; font-weight: 800; color: #1A2E2A; }
+  .edit-menu-date  { font-size: 12px; color: #6B8882; margin-top: 2px; }
+
+  .edit-star-section { padding: 22px 24px 0; text-align: center; }
+  .edit-star-section .q { font-size: 15px; font-weight: 700; color: #1A2E2A; margin-bottom: 14px; }
+
+  .edit-star-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 8px; }
+
+  .estr {
+    font-size: 32px; cursor: pointer; color: #D0E8E4;
+    transition: color .15s, transform .1s; user-select: none;
+  }
+  .estr:hover { transform: scale(1.15); }
+  .estr.filled { color: #E8D22A; }
+
+  #edit-star-label { font-size: 13px; color: #3DAFA0; font-weight: 600; min-height: 18px; }
+
+  .edit-comment-section { padding: 20px 24px 0; }
+
+  .edit-comment-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .edit-comment-head span:first-child { font-size: 14px; font-weight: 700; color: #1A2E2A; }
+  #edit-char-count { font-size: 12px; color: #6B8882; }
+
+  #edit-comment {
+    width: 100%; height: 90px; resize: none;
+    border: 1.5px solid #DFF0ED; border-radius: 12px;
+    padding: 12px 14px; font-size: 14px; color: #1A2E2A;
+    font-family: inherit; outline: none;
+    background: #F7FCFB;
+    transition: border-color .2s;
+  }
+  #edit-comment:focus { border-color: #3DAFA0; }
+
+  .edit-submit-btn {
+    display: block; width: calc(100% - 48px); margin: 16px 24px 24px;
+    height: 50px; border: none; border-radius: 14px;
+    font-size: 15px; font-weight: 800; cursor: pointer;
+    transition: background .25s;
+  }
   footer {
     background: var(--white);
     border-top: 1px solid var(--border);
@@ -448,6 +572,51 @@
   <button class="fab-main" title="리뷰 작성" onclick="goWriteReview()">＋</button>
 </div>
 
+<!-- ─── 수정 모달 ─── -->
+<div id="edit-overlay">
+  <div class="edit-modal">
+    <div class="edit-modal-head">
+      <span>리뷰 수정하기</span>
+      <button class="edit-close-btn" onclick="closeEditModal()">✕</button>
+    </div>
+
+    <div class="edit-menu-info">
+      <div class="edit-menu-icon">🍱</div>
+      <div>
+        <div class="edit-menu-label">오늘의 메뉴</div>
+        <div class="edit-menu-name" id="edit-menu-name">메뉴 정보</div>
+        <div class="edit-menu-date" id="edit-menu-date"></div>
+      </div>
+    </div>
+
+    <div class="edit-star-section">
+      <div class="q">맛은 어떠셨나요?</div>
+      <div class="edit-star-row">
+        <span class="estr" data-v="1" onclick="setEditStar(1)">☆</span>
+        <span class="estr" data-v="2" onclick="setEditStar(2)">☆</span>
+        <span class="estr" data-v="3" onclick="setEditStar(3)">☆</span>
+        <span class="estr" data-v="4" onclick="setEditStar(4)">☆</span>
+        <span class="estr" data-v="5" onclick="setEditStar(5)">☆</span>
+      </div>
+      <div id="edit-star-label"></div>
+    </div>
+
+    <div class="edit-comment-section">
+      <div class="edit-comment-head">
+        <span>한 줄 코멘트</span>
+        <span id="edit-char-count">0 / 50</span>
+      </div>
+      <textarea id="edit-comment" maxlength="50"
+        placeholder="메뉴에 대한 솔직한 의견을 들려주세요."
+        oninput="onEditCommentInput()"></textarea>
+    </div>
+
+    <button class="edit-submit-btn" id="edit-submit-btn" onclick="submitEdit()">
+      ▶ 수정 완료
+    </button>
+  </div>
+</div>
+
 <!-- 푸터 -->
 <footer>
   <div class="foot-links">
@@ -464,8 +633,11 @@
 <script>
   const API_BASE = 'http://localhost:4000/api';
 
-  // 로그인 유저 아바타
+  // 로그인 유저
   const user = JSON.parse(localStorage.getItem('mt_user') || sessionStorage.getItem('mt_user') || 'null');
+  const token = localStorage.getItem('mt_token') || sessionStorage.getItem('mt_token') || '';
+  const myId = user?.id || null;
+
   if (user) {
     document.getElementById('user-avatar').textContent = user.name[0];
     document.getElementById('user-avatar').title = `${user.name}님 (${user.grade}학년 ${user.classNum}반)`;
@@ -480,7 +652,6 @@
   }
 
   function goWriteReview() {
-    // main.html로 이동해서 연필 버튼으로 리뷰 작성 모달을 열도록 플래그 전달
     sessionStorage.setItem('mt_open_review_modal', '1');
     location.href = 'main.html';
   }
@@ -505,12 +676,12 @@
     return '★'.repeat(rating) + '☆'.repeat(5 - rating);
   }
 
-  function mealTypeToTag(mealType) {
-    if (!mealType) return 'LUNCH';
-    if (mealType.includes('점심') || mealType.includes('중식')) return 'LUNCH';
-    if (mealType.includes('저녁') || mealType.includes('석식')) return 'DINNER';
-    if (mealType.includes('아침') || mealType.includes('조식')) return 'BREAKFAST';
-    return mealType.toUpperCase();
+  function mealTypeToTag(t) {
+    if (!t) return 'LUNCH';
+    if (t.includes('점심') || t.includes('중식')) return 'LUNCH';
+    if (t.includes('저녁') || t.includes('석식')) return 'DINNER';
+    if (t.includes('아침') || t.includes('조식')) return 'BREAKFAST';
+    return t.toUpperCase();
   }
 
   function mealTypeMatchesFilter(mealType, filter) {
@@ -541,7 +712,6 @@
 
     const counts = { 1:0, 2:0, 3:0, 4:0, 5:0 };
     rows.forEach(r => { if (counts[r.rating] !== undefined) counts[r.rating]++; });
-
     [5,4,3,2,1].forEach(star => {
       const pct = total ? Math.round((counts[star] / total) * 100) : 0;
       document.getElementById(`dist-${star}`).style.width = pct + '%';
@@ -549,6 +719,30 @@
     });
   }
 
+  // ─── ⋮ 드롭다운 열기/닫기 ──────────────────────────────────────
+  let openDropdownId = null;
+
+  function toggleDropdown(reviewId) {
+    // 이미 열린 것 닫기
+    if (openDropdownId && openDropdownId !== reviewId) {
+      const prev = document.getElementById(`dd-${openDropdownId}`);
+      if (prev) prev.classList.remove('open');
+    }
+    const dd = document.getElementById(`dd-${reviewId}`);
+    if (!dd) return;
+    const isOpen = dd.classList.toggle('open');
+    openDropdownId = isOpen ? reviewId : null;
+  }
+
+  // 바깥 클릭 시 드롭다운 닫기
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.review-top-right')) {
+      document.querySelectorAll('.more-dropdown.open').forEach(d => d.classList.remove('open'));
+      openDropdownId = null;
+    }
+  });
+
+  // ─── 리뷰 렌더링 ────────────────────────────────────────────────
   function renderReviews() {
     const grid = document.getElementById('review-grid');
     let rows = allReviews.filter(r => mealTypeMatchesFilter(r.meal_type, currentFilter));
@@ -563,38 +757,43 @@
       return;
     }
 
-    grid.innerHTML = rows.map(r => `
-      <div class="review-card" data-id="${r.review_id}" data-rating="${r.rating}" data-comment="${escapeHtml(r.comment || '')}" data-menu-name="${escapeHtml(r.menu_name || '오늘의 메뉴')}">
-        <div class="review-top">
-          <div class="reviewer">
-            <div class="reviewer-avatar">${escapeHtml((r.student_name || '?')[0])}</div>
-            <div>
-              <div class="reviewer-name">${escapeHtml(r.student_name || '익명')}</div>
-              <div class="reviewer-meta">${r.grade}학년 ${r.class_num}반 · ${timeAgo(r.created_at)}</div>
+    grid.innerHTML = rows.map(r => {
+      const isMine = myId && r.student_id === myId;
+      return `
+        <div class="review-card" id="card-${r.review_id}">
+          <div class="review-top">
+            <div class="reviewer">
+              <div class="reviewer-avatar">${escapeHtml((r.student_name || '?')[0])}</div>
+              <div>
+                <div class="reviewer-name">${escapeHtml(r.student_name || '익명')}</div>
+                <div class="reviewer-meta">${r.grade}학년 ${r.class_num}반 · ${timeAgo(r.created_at)}</div>
+              </div>
             </div>
+            ${isMine ? `
+              <div class="review-top-right">
+                <button class="more-btn" onclick="toggleDropdown(${r.review_id})" title="더보기">•••</button>
+                <div class="more-dropdown" id="dd-${r.review_id}">
+                  <button onclick="openEditModal(${r.review_id})">✏️ 수정</button>
+                  <button class="del" onclick="deleteReview(${r.review_id})">🗑️ 삭제</button>
+                </div>
+              </div>
+            ` : `<div class="review-stars">${starString(r.rating)}</div>`}
           </div>
-          <div class="review-stars">${starString(r.rating)}</div>
+          ${isMine ? `<div style="font-size:13px;color:#E8D22A;margin-bottom:6px;">${starString(r.rating)}</div>` : ''}
+          <span class="meal-tag">${mealTypeToTag(r.meal_type)}</span>
+          <div class="review-text">${escapeHtml(r.comment || '')}</div>
         </div>
-        <span class="meal-tag">${mealTypeToTag(r.meal_type)}</span>
-        <div class="review-text" style="padding-right: 20px;">${escapeHtml(r.comment || '')}</div>
-        ${r.student_id === (user ? user.id : null) ? `
-          <div class="more-menu">
-            <button class="more-btn">⋮</button>
-            <div class="dropdown-content">
-              <button onclick="handleEditReview(this)">수정</button>
-              <button onclick="handleDeleteReview(${r.review_id})" style="color:var(--error)">삭제</button>
-            </div>
-          </div>
-        ` : ''}
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   async function loadReviews() {
     try {
       const res = await fetch(`${API_BASE}/reviews/recent?limit=50`);
       if (!res.ok) throw new Error();
-      allReviews = await res.json();
+      const rows = await res.json();
+      // student_id 필드가 응답에 포함되도록 서버 쿼리에 추가됨
+      allReviews = rows;
       renderSummary(allReviews);
       renderReviews();
     } catch {
@@ -603,120 +802,137 @@
     }
   }
 
-  async function handleDeleteReview(reviewId) {
-    const modal = document.getElementById('delete-confirm-modal');
-    modal.style.display = 'flex';
-
-    document.getElementById('confirm-delete-btn').onclick = async () => {
-      const token = localStorage.getItem('mt_token') || sessionStorage.getItem('mt_token');
-      try {
-        const res = await fetch(`${API_BASE}/reviews/${reviewId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          showToast('리뷰가 삭제되었습니다.');
-          loadReviews();
-        } else {
-          const d = await res.json();
-          showToast(d.message);
-        }
-      } catch { showToast('서버 오류가 발생했습니다.'); }
-      modal.style.display = 'none';
-    };
+  // ─── 삭제 ───────────────────────────────────────────────────────
+  async function deleteReview(reviewId) {
+    if (!confirm('리뷰를 삭제할까요?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('리뷰가 삭제되었습니다.');
+        allReviews = allReviews.filter(r => r.review_id !== reviewId);
+        renderSummary(allReviews);
+        renderReviews();
+      } else {
+        showToast(data.message || '삭제에 실패했습니다.');
+      }
+    } catch {
+      showToast('서버에 연결할 수 없습니다.');
+    }
   }
 
-  async function handleEditReview(btn) {
-    const card = btn.closest('.review-card');
-    // 데이터 속성에서 리뷰 정보 추출
-    editingReviewId = card.dataset.id;
-    const rating = card.dataset.rating;
-    const comment = card.dataset.comment;
-    const menuName = card.dataset.menuName;
+  // ─── 수정 모달 ──────────────────────────────────────────────────
+  const starLabels = ['', '별로예요', '그냥 그래요', '맛있어요!', '아주 맛있어요!', '최고예요! 🎉'];
+  let editReviewId = null;
+  let editStar = 0;
 
-    // 모달 내용 채우기
-    document.getElementById('edit-menu-name').textContent = menuName || '오늘의 메뉴';
-    document.getElementById('edit-comment').value = comment;
-    setStar(parseInt(rating));
-    updateCharCount();
+  function openEditModal(reviewId) {
+    // 드롭다운 닫기
+    document.querySelectorAll('.more-dropdown.open').forEach(d => d.classList.remove('open'));
 
-    // 모달 표시
-    document.getElementById('edit-overlay').style.display = 'flex';
+    const review = allReviews.find(r => r.review_id === reviewId);
+    if (!review) return;
+
+    editReviewId = reviewId;
+    editStar = review.rating;
+
+    // 메뉴 정보
+    document.getElementById('edit-menu-name').textContent = review.menu_name || '오늘의 메뉴';
+    const d = new Date(review.created_at);
+    document.getElementById('edit-menu-date').textContent =
+      `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${mealTypeToTag(review.meal_type) === 'LUNCH' ? '중식' : '석식'}`;
+
+    // 기존 별점 / 코멘트 채우기
+    renderEditStars();
+    document.getElementById('edit-comment').value = review.comment || '';
+    document.getElementById('edit-char-count').textContent = `${(review.comment || '').length} / 50`;
+    updateEditBtn();
+
+    const overlay = document.getElementById('edit-overlay');
+    overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
   }
-
-  // ─── 리뷰 수정 모달 로직 (상태 관리) ───
-  let editingReviewId = null;
-  let selectedStar = 0;
-  const starLabels = ['', '별로예요', '그냥 그래요', '맛있어요!', '아주 맛있어요!', '최고예요! 🎉'];
 
   function closeEditModal() {
     document.getElementById('edit-overlay').style.display = 'none';
     document.body.style.overflow = '';
+    editReviewId = null;
   }
 
-  function setStar(v) {
-    selectedStar = v;
-    document.querySelectorAll('.edit-star').forEach((s, idx) => {
-      const val = parseInt(s.dataset.v);
-      s.textContent = val <= selectedStar ? '★' : '☆';
-      s.classList.toggle('filled', val <= selectedStar);
+  // 오버레이 클릭 시 닫기
+  document.getElementById('edit-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
+
+  function setEditStar(v) {
+    editStar = v;
+    renderEditStars();
+    updateEditBtn();
+  }
+
+  function renderEditStars() {
+    document.querySelectorAll('.estr').forEach(s => {
+      const v = parseInt(s.dataset.v);
+      s.textContent = v <= editStar ? '★' : '☆';
+      s.classList.toggle('filled', v <= editStar);
     });
-    document.getElementById('edit-star-label').textContent = starLabels[selectedStar];
-    updateSubmitBtn();
+    document.getElementById('edit-star-label').textContent = starLabels[editStar] || '';
   }
 
-  function updateCharCount() {
-    const val = document.getElementById('edit-comment').value;
-    document.getElementById('edit-char-count').textContent = `${val.length} / 50`;
-    updateSubmitBtn();
+  function onEditCommentInput() {
+    const len = document.getElementById('edit-comment').value.length;
+    document.getElementById('edit-char-count').textContent = `${len} / 50`;
+    updateEditBtn();
   }
 
-  function updateSubmitBtn() {
+  function updateEditBtn() {
     const btn = document.getElementById('edit-submit-btn');
     const commentFilled = document.getElementById('edit-comment').value.trim().length > 0;
-    const ready = selectedStar > 0 && commentFilled;
-    btn.disabled = !ready;
-    btn.style.background = ready ? 'var(--mint-dark)' : '#C0DDD8';
+    const ready = editStar > 0 && commentFilled;
+    btn.style.background = ready ? '#2A7A6E' : '#C0DDD8';
+    btn.style.color = '#fff';
     btn.style.cursor = ready ? 'pointer' : 'not-allowed';
   }
 
   async function submitEdit() {
     const comment = document.getElementById('edit-comment').value.trim();
-    const token = localStorage.getItem('mt_token') || sessionStorage.getItem('mt_token');
+    if (!editStar)  { showToast('별점을 선택해주세요.'); return; }
+    if (!comment)   { showToast('코멘트를 입력해주세요.'); return; }
+
     try {
-      const res = await fetch(`${API_BASE}/reviews/${editingReviewId}`, {
+      const res = await fetch(`${API_BASE}/reviews/${editReviewId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ rating: selectedStar, comment })
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rating: editStar, comment }),
       });
+      const data = await res.json();
       if (res.ok) {
-        showToast('리뷰가 수정되었습니다.');
+        // 로컬 데이터 즉시 반영
+        const idx = allReviews.findIndex(r => r.review_id === editReviewId);
+        if (idx !== -1) {
+          allReviews[idx].rating  = editStar;
+          allReviews[idx].comment = comment;
+        }
         closeEditModal();
-        loadReviews();
+        showToast('리뷰가 수정되었습니다! ✅');
+        renderSummary(allReviews);
+        renderReviews();
       } else {
-        const d = await res.json(); showToast(d.message);
+        showToast(data.message || '수정에 실패했습니다.');
       }
-    } catch { showToast('서버 오류가 발생했습니다.'); }
+    } catch {
+      showToast('서버에 연결할 수 없습니다.');
+    }
   }
 
   loadReviews();
-  // 새 리뷰가 실시간으로 반영되도록 주기적으로 갱신
   setInterval(loadReviews, 10000);
 </script>
-
-<!-- 삭제 확인 커스텀 모달 -->
-<div id="delete-confirm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
-  <div style="background:#fff; border-radius:20px; width:90%; max-width:320px; padding:28px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-    <div style="font-size:40px; margin-bottom:16px;">🗑️</div>
-    <h3 style="font-size:18px; font-weight:800; color:var(--text); margin-bottom:8px;">리뷰를 삭제할까요?</h3>
-    <p style="font-size:14px; color:var(--text-muted); margin-bottom:24px; line-height:1.5;">삭제된 리뷰는 되돌릴 수 없습니다.<br>정말로 삭제하시겠습니까?</p>
-    <div style="display:flex; gap:10px;">
-      <button onclick="document.getElementById('delete-confirm-modal').style.display='none'" style="flex:1; height:46px; border:1px solid var(--border); background:#fff; color:var(--text-muted); border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;">취소</button>
-      <button id="confirm-delete-btn" style="flex:1; height:46px; border:none; background:var(--error); color:#fff; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;">삭제하기</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
